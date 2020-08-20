@@ -10,6 +10,7 @@
 #include "../ClangTidyModule.h"
 #include "../ClangTidyModuleRegistry.h"
 #include "AvoidConstParamsInDecls.h"
+#include "AwesomeFunctionNamesCheck.h"
 #include "BracesAroundStatementsCheck.h"
 #include "ConstReturnTypeCheck.h"
 #include "ContainerSizeEmptyCheck.h"
@@ -56,6 +57,8 @@ public:
   void addCheckFactories(ClangTidyCheckFactories &CheckFactories) override {
     CheckFactories.registerCheck<AvoidConstParamsInDecls>(
         "readability-avoid-const-params-in-decls");
+    CheckFactories.registerCheck<AwesomeFunctionNamesCheck>(
+        "readability-awesome-function-names");
     CheckFactories.registerCheck<BracesAroundStatementsCheck>(
         "readability-braces-around-statements");
     CheckFactories.registerCheck<ConstReturnTypeCheck>(

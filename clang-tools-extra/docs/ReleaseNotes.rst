@@ -136,6 +136,11 @@ New checks
   Finds includes of system libc headers not provided by the compiler within
   llvm-libc implementations.
 
+- New :doc:`misc-struct-fields-accessors
+  <clang-tidy/checks/misc-struct-fields-accessors>` check.
+
+  FIXME: add release notes.
+
 - New :doc:`modernize-replace-disallow-copy-and-assign-macro
   <clang-tidy/checks/modernize-replace-disallow-copy-and-assign-macro>` check.
 
@@ -157,6 +162,11 @@ New checks
 
   Finds calls to ``NSInvocation`` methods under ARC that don't have proper
   argument object lifetimes.
+
+- New :doc:`readability-awesome-function-names
+  <clang-tidy/checks/readability-awesome-function-names>` check.
+
+  FIXME: add release notes.
 
 - New :doc:`readability-use-anyofallof
   <clang-tidy/checks/readability-use-anyofallof>` check.

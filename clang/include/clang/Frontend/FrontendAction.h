@@ -205,7 +205,7 @@ public:
 
   /// Prepare the action to execute on the given compiler instance.
   bool PrepareToExecute(CompilerInstance &CI) {
-    return PrepareToExecuteAction(CI);
+    return PrepareTo(CI);
   }
 
   /// Prepare the action for processing the input file \p Input.

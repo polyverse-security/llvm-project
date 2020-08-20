@@ -17,6 +17,7 @@
 #include "NonPrivateMemberVariablesInClassesCheck.h"
 #include "RedundantExpressionCheck.h"
 #include "StaticAssertCheck.h"
+#include "StructFieldsAccessorsCheck.h"
 #include "ThrowByValueCatchByReferenceCheck.h"
 #include "UnconventionalAssignOperatorCheck.h"
 #include "UniqueptrResetReleaseCheck.h"
@@ -44,6 +45,8 @@ public:
     CheckFactories.registerCheck<RedundantExpressionCheck>(
         "misc-redundant-expression");
     CheckFactories.registerCheck<StaticAssertCheck>("misc-static-assert");
+    CheckFactories.registerCheck<StructFieldsAccessorsCheck>(
+        "misc-struct-fields-accessors");
     CheckFactories.registerCheck<ThrowByValueCatchByReferenceCheck>(
         "misc-throw-by-value-catch-by-reference");
     CheckFactories.registerCheck<UnconventionalAssignOperatorCheck>(
