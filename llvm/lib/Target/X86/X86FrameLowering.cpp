@@ -1269,6 +1269,13 @@ void X86FrameLowering::emitPrologue(MachineFunction &MF,
     if (TRI->needsStackRealignment(MF) && !IsWin64Prologue)
       NumBytes = alignTo(NumBytes, MaxAlign);
 
+    // ******** EXPERIMENT add NOP ***********
+
+    BuildMI(MBB, MBBI, DL, TII.get(X86::NOOP))
+      .setMIFlag(MachineInstr::FrameSetup);
+
+    // ******** EXPERIMENT add NOP ***********
+
     // Save EBP/RBP into the appropriate stack slot.
     BuildMI(MBB, MBBI, DL, TII.get(Is64Bit ? X86::PUSH64r : X86::PUSH32r))
       .addReg(MachineFramePtr, RegState::Kill)
