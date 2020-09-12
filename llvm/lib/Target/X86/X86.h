@@ -117,6 +117,10 @@ FunctionPass *createX86DomainReassignmentPass();
 /// encoding when possible in order to reduce code size.
 FunctionPass *createX86EvexToVexInsts();
 
+/// This pass Convert code to be Move Independent
+/// 
+FunctionPass *createX86ConvertToMICInsts();
+
 /// This pass creates the thunks for the retpoline feature.
 FunctionPass *createX86IndirectThunksPass();
 
@@ -147,6 +151,7 @@ FunctionPass *createX86SpeculativeLoadHardeningPass();
 FunctionPass *createX86SpeculativeExecutionSideEffectSuppression();
 
 void initializeEvexToVexInstPassPass(PassRegistry &);
+void initializeConvertToMICPassPass(PassRegistry &);
 void initializeFixupBWInstPassPass(PassRegistry &);
 void initializeFixupLEAPassPass(PassRegistry &);
 void initializeFPSPass(PassRegistry &);

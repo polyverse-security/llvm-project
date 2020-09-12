@@ -71,6 +71,7 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeX86Target() {
   initializeWinEHStatePassPass(PR);
   initializeFixupBWInstPassPass(PR);
   initializeEvexToVexInstPassPass(PR);
+  initializeConvertToMICPassPass(PR);
   initializeFixupLEAPassPass(PR);
   initializeFPSPass(PR);
   initializeX86FixupSetCCPassPass(PR);
