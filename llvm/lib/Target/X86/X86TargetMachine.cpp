@@ -514,6 +514,7 @@ void X86PassConfig::addPreEmitPass() {
     addPass(createX86FixupLEAs());
   }
   addPass(createX86EvexToVexInsts());
+  addPass(createX86ConvertToMICInsts());
   addPass(createX86DiscriminateMemOpsPass());
   addPass(createX86InsertPrefetchPass());
   addPass(createX86InsertX87waitPass());

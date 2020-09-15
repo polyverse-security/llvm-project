@@ -29,6 +29,8 @@
 #include "llvm/CodeGen/MachineOperand.h"
 #include "llvm/MC/MCInstrDesc.h"
 #include "llvm/Pass.h"
+#include "llvm/Support/Debug.h"
+
 #include <cassert>
 #include <cstdint>
 
@@ -90,6 +92,9 @@ private:
 char ConvertToMICPass::ID = 0;
 
 bool ConvertToMICPass::runOnMachineFunction(MachineFunction &MF) {
+
+  LLVM_DEBUG(dbgs() << "POLYVERSE movable code - I am here!!!!\n");
+
   TII = MF.getSubtarget<X86Subtarget>().getInstrInfo();
 
   const X86Subtarget &ST = MF.getSubtarget<X86Subtarget>();
