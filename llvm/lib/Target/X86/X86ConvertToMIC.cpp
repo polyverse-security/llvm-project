@@ -57,13 +57,66 @@ struct X86EvexToVexCompressTableEntry {
 
 #define DEBUG_TYPE CONVERTTOMIC_NAME
 
+/// Returns true if two machine operands are identical and they are not
+/// physical registers.
+static inline bool isIdenticalOp(const MachineOperand &MO1,
+                                 const MachineOperand &MO2);
+
+/// Returns true if two address displacement operands are of the same
+/// type and use the same symbol/index/address regardless of the offset.
+static bool isSimilarDispOp(const MachineOperand &MO1,
+                            const MachineOperand &MO2);
+
+/// Returns true if the instruction is CALL.
+static inline bool isCALL(const MachineInstr &MI) {
+  unsigned Opcode = MI.getOpcode();
+  return Opcode == X86::CALL16r || Opcode == X86::CALL32r ||
+         Opcode == X86::CALL64r ;
+}
+
 namespace {
+
+/// A key based on instruction's memory operands.
+class MemOpKey {
+public:
+  MemOpKey(const MachineOperand *Base, const MachineOperand *Scale,
+           const MachineOperand *Index, const MachineOperand *Segment,
+           const MachineOperand *Disp)
+      : Disp(Disp) {
+    Operands[0] = Base;
+    Operands[1] = Scale;
+    Operands[2] = Index;
+    Operands[3] = Segment;
+  }
+
+  bool operator==(const MemOpKey &Other) const {
+    // Addresses' bases, scales, indices and segments must be identical.
+    for (int i = 0; i < 4; ++i)
+      if (!isIdenticalOp(*Operands[i], *Other.Operands[i]))
+        return false;
+
+    // Addresses' displacements don't have to be exactly the same. It only
+    // matters that they use the same symbol/index/address. Immediates' or
+    // offsets' differences will be taken care of during instruction
+    // substitution.
+    return isSimilarDispOp(*Disp, *Other.Disp);
+  }
+
+  // Address' base, scale, index and segment operands.
+  const MachineOperand *Operands[4];
+
+  // Address' displacement operand.
+  const MachineOperand *Disp;
+};
 
 class ConvertToMICPass : public MachineFunctionPass {
 
+  using MemOpMap = DenseMap<MemOpKey, SmallVector<MachineInstr *, 16>>;
+  void findCALLs(const MachineBasicBlock &MBB, MemOpMap &LEAs);
+
   /// For EVEX instructions that can be encoded using VEX encoding, replace
   /// them by the VEX encoding in order to reduce size.
-  bool CompressEvexToVexImpl(MachineInstr &MI) const;
+  bool ConvertToMIC(MachineInstr &MI, llvm::MachineBasicBlock::iterator &MBBI) const;
 
 public:
   static char ID;
@@ -95,23 +148,26 @@ bool ConvertToMICPass::runOnMachineFunction(MachineFunction &MF) {
 
   LLVM_DEBUG(dbgs() << "POLYVERSE movable code - I am here!!!!\n");
 
-  TII = MF.getSubtarget<X86Subtarget>().getInstrInfo();
+  // TII = MF.getSubtarget<X86Subtarget>().getInstrInfo();
 
-  const X86Subtarget &ST = MF.getSubtarget<X86Subtarget>();
-  if (!ST.hasAVX512())
-    return false;
+  // const X86Subtarget &ST = MF.getSubtarget<X86Subtarget>();
+  // if (!ST.hasAVX512())
+  //   return false;
 
   bool Changed = false;
-
-  /// Go over all basic blocks in function and replace
-  /// EVEX encoded instrs by VEX encoding when possible.
   for (MachineBasicBlock &MBB : MF) {
-
     // Traverse the basic block.
-    for (MachineInstr &MI : MBB)
-      Changed |= CompressEvexToVexImpl(MI);
+    // for (MachineInstr &MI : MBB) {
+    // llvm::MachineBasicBlock::iterator
+    for (auto I = MBB.begin(), E = MBB.end(); I != E;) {
+      MachineInstr &MI = *I++;
+      if( !isCALL(MI) ) {
+        LLVM_DEBUG(dbgs() << "🥵🥵POLYVERSE🥵🥵 not a call 🥵🥵!!!!\n");
+        continue;
+      }
+      Changed |= ConvertToMIC(MI, I);
+    }
   }
-
   return Changed;
 }
 
@@ -207,10 +263,9 @@ static bool performCustomAdjustments(MachineInstr &MI, unsigned NewOpc) {
   return true;
 }
 
-
 // For EVEX instructions that can be encoded using VEX encoding
 // replace them by the VEX encoding in order to reduce size.
-bool ConvertToMICPass::CompressEvexToVexImpl(MachineInstr &MI) const {
+bool ConvertToMICPass::ConvertToMIC(MachineInstr &MI, llvm::MachineBasicBlock::iterator &MBBI) const {
   // VEX format.
   // # of bytes: 0,2,3  1      1      0,1   0,1,2,4  0,1
   //  [Prefixes] [VEX]  OPCODE ModR/M [SIB] [DISP]  [IMM]
@@ -218,6 +273,19 @@ bool ConvertToMICPass::CompressEvexToVexImpl(MachineInstr &MI) const {
   // EVEX format.
   //  # of bytes: 4    1      1      1      4       / 1         1
   //  [Prefixes]  EVEX Opcode ModR/M [SIB] [Disp32] / [Disp8*N] [Immediate]
+  LLVM_DEBUG(dbgs() << "😁😁POLYVERSE😁😁 got a CALL!!!!😁😁\n");
+  if( !isCALL(MI) )
+    return false;
+
+  auto MBB = MI.getParent();
+  auto MF = MBB->getParent();
+  auto TII = MF->getSubtarget<X86Subtarget>().getInstrInfo();
+  MachineInstr *MovableMI =
+      MBB->getParent()->CreateMachineInstr(TII->get(X86::NOOP), DebugLoc()); // TODO some meaningful instruction code
+
+  MovableMI->setPreInstrSymbol(*MF, MF->getPICBaseSymbol());
+
+  MBB->insert(MBBI, MovableMI);
 
   const MCInstrDesc &Desc = MI.getDesc();
 
