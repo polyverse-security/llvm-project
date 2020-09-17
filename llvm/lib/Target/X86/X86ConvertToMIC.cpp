@@ -71,7 +71,7 @@ static bool isSimilarDispOp(const MachineOperand &MO1,
 static inline bool isCALL(const MachineInstr &MI) {
   unsigned Opcode = MI.getOpcode();
   return Opcode == X86::CALL16r || Opcode == X86::CALL32r ||
-         Opcode == X86::CALL64r ;
+         Opcode == X86::CALL64r || Opcode == X86::CALL64pcrel32 ;
 }
 
 namespace {
@@ -161,6 +161,8 @@ bool ConvertToMICPass::runOnMachineFunction(MachineFunction &MF) {
     // llvm::MachineBasicBlock::iterator
     for (auto I = MBB.begin(), E = MBB.end(); I != E;) {
       MachineInstr &MI = *I++;
+      LLVM_DEBUG(dbgs() << "🥵🥵POLYVERSE MI 🥵🥵: " << "\n");
+      MI.dump();
       if( !isCALL(MI) ) {
         LLVM_DEBUG(dbgs() << "🥵🥵POLYVERSE🥵🥵 not a call 🥵🥵!!!!\n");
         continue;
