@@ -27,6 +27,7 @@
 #include "llvm/CodeGen/MachineFunctionPass.h"
 #include "llvm/CodeGen/MachineInstr.h"
 #include "llvm/CodeGen/MachineOperand.h"
+#include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCInstrDesc.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/Debug.h"
@@ -145,28 +146,18 @@ private:
 char ConvertToMICPass::ID = 0;
 
 bool ConvertToMICPass::runOnMachineFunction(MachineFunction &MF) {
-
-  LLVM_DEBUG(dbgs() << "POLYVERSE movable code - I am here!!!!\n");
-
-  // TII = MF.getSubtarget<X86Subtarget>().getInstrInfo();
-
-  // const X86Subtarget &ST = MF.getSubtarget<X86Subtarget>();
-  // if (!ST.hasAVX512())
-  //   return false;
+  LLVM_DEBUG(dbgs() << "😁😁POLYVERSE😁😁 movable code - I am here!!!!: " << MF.getName() << "\n";);
 
   bool Changed = false;
   for (MachineBasicBlock &MBB : MF) {
     // Traverse the basic block.
-    // for (MachineInstr &MI : MBB) {
-    // llvm::MachineBasicBlock::iterator
     for (auto I = MBB.begin(), E = MBB.end(); I != E;) {
       MachineInstr &MI = *I++;
-      LLVM_DEBUG(dbgs() << "🥵🥵POLYVERSE MI 🥵🥵: " << "\n");
-      MI.dump();
       if( !isCALL(MI) ) {
-        LLVM_DEBUG(dbgs() << "🥵🥵POLYVERSE🥵🥵 not a call 🥵🥵!!!!\n");
+        // LLVM_DEBUG(dbgs() << "🥵🥵POLYVERSE🥵🥵 not a call 🥵🥵!!!!\n");
         continue;
       }
+      LLVM_DEBUG(dbgs() << "🥵🥵POLYVERSE MI 🥵🥵: " << "\n"; MI.dump(););
       Changed |= ConvertToMIC(MI, I);
     }
   }
@@ -182,7 +173,6 @@ static bool usesExtendedRegister(const MachineInstr &MI) {
     // Check for YMM register with indexes between 16 - 31.
     if (Reg >= X86::YMM16 && Reg <= X86::YMM31)
       return true;
-
     return false;
   };
 
@@ -275,17 +265,21 @@ bool ConvertToMICPass::ConvertToMIC(MachineInstr &MI, llvm::MachineBasicBlock::i
   // EVEX format.
   //  # of bytes: 4    1      1      1      4       / 1         1
   //  [Prefixes]  EVEX Opcode ModR/M [SIB] [Disp32] / [Disp8*N] [Immediate]
-  LLVM_DEBUG(dbgs() << "😁😁POLYVERSE😁😁 got a CALL!!!!😁😁\n");
   if( !isCALL(MI) )
     return false;
+  LLVM_DEBUG(dbgs() << "😁😁POLYVERSE😁😁 got a CALL!!!!😁😁\n");
 
   auto MBB = MI.getParent();
   auto MF = MBB->getParent();
+  llvm::MCContext &ctx = MF->getContext();
   auto TII = MF->getSubtarget<X86Subtarget>().getInstrInfo();
   MachineInstr *MovableMI =
       MBB->getParent()->CreateMachineInstr(TII->get(X86::NOOP), DebugLoc()); // TODO some meaningful instruction code
 
-  MovableMI->setPreInstrSymbol(*MF, MF->getPICBaseSymbol());
+  auto symbol = ctx.createTempSymbol("POLYVERSE", true);
+  MovableMI->setPreInstrSymbol(*MF, symbol); // MF->getPICBaseSymbol()
+
+  LLVM_DEBUG(dbgs() << "😁😁POLYVERSE inserting MI 😁😁: " << "\n"; MovableMI->dump(););
 
   MBB->insert(MBBI, MovableMI);
 
